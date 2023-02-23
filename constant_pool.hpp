@@ -29,96 +29,79 @@ struct CpInfo {
 
 
 struct CONSTANT_ClassInfo {
-    uint8_t tag;
     uint16_t nameIndex;
 };
 
 struct CONSTANT_FieldrefInfo {
-    uint8_t tag;
     uint16_t classIndex;
     uint16_t nameAndTypeIndex;
 };
 
 struct CONSTANT_MethodrefInfo {
-    uint8_t tag;
     uint16_t classIndex;
     uint16_t name_AndTypeIndex;
 };
 
 struct CONSTANT_InterfaceMethodrefInfo {
-    uint8_t tag;
     uint16_t class_Index;
     uint16_t nameAndTypeIndex;
 };
 
 struct CONSTANT_StringInfo {
-    uint8_t tag;
     uint16_t stringIndex;
 };
 
 struct CONSTANT_IntegerInfo {
-    uint8_t tag;
     uint32_t bytes;
 };
 
 struct CONSTANT_FloatInfo {
-    uint8_t tag;
-    uint32_t bytes;
+    uint32_t bytes = 0;
 };
 
 struct CONSTANT_LongInfo {
-    uint8_t tag;
     uint32_t highBytes;
     uint32_t lowBytes;
 };
 
 struct CONSTANT_DoubleInfo {
-    uint8_t tag;
     uint32_t highBytes;
     uint32_t lowBytes;
 };
 
 struct CONSTANT_NameAndTypeInfo {
-    uint8_t tag;
     uint16_t nameIndex;
     uint16_t descriptorIndex;
 };
 
 struct CONSTANT_Utf8Info {
-    uint8_t tag;
     std::vector<uint8_t> bytes;
 };
 
 struct CONSTANT_MethodHandleInfo {
-    uint8_t tag;
     uint8_t referenceKind;
     uint16_t referenceIndex;
 };
 
 struct CONSTANT_MethodTypeInfo {
-    uint8_t tag;
     uint16_t descriptorIndex;
 };
 
 struct CONSTANT_DynamicInfo {
-    uint8_t tag;
     uint16_t bootstrapMethodAttrIndex;
     uint16_t nameAndTypeIndex;
 };
 
 struct CONSTANT_InvokeDynamicInfo {
-    uint8_t tag;
     uint16_t bootstrapMethodAttrIndex;
     uint16_t nameAndTypeIndex;
 };
 
 struct CONSTANT_ModuleInfo {
-    uint8_t tag;
     uint16_t nameIndex;
 };
 
 struct CONSTANT_PackageInfo {
-    uint8_t tag;
     uint16_t nameIndex;
 };
 

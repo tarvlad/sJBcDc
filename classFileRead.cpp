@@ -157,16 +157,20 @@ ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 }
 
 
+static inline bool
+correctUtf8Byte(uint8_t &byte) {
+    return (byte == 0) || ((byte >= 0xf0) && (byte <= 0xff));
+}
+
 
 template<typename Buffer>
 static CONSTANT_Utf8Info
 readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
-    CONSTANT_Utf8Info cUtf8{CONSTANT_Utf8};
+    CONSTANT_Utf8Info cUtf8{};
     if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         flagError = true;
         return cUtf8;
     }
-
 
     cUtf8.bytes.resize(getValueFromClassFileBuffer<uint16_t>(buf, bufPtr));
     if (!u8VecBufferReadNBytesCorrect(buf, bufPtr, cUtf8.bytes.size())) {
@@ -176,8 +180,7 @@ readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 
     for (auto &byte : cUtf8.bytes) {
         byte = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
-        //TODO: function with name, not just checks
-        if ((byte == 0) || ((byte >= 0xf0) && (byte <= 0xff))) {
+        if (!correctUtf8Byte(byte)) {
             flagError = true;
             return cUtf8;
         }
@@ -187,9 +190,22 @@ readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 }
 
 
+template<typename CONSTANT_IntOrFloatType, typename Buffer>
+static CONSTANT_IntOrFloatType
+readConstantIntOrFloatFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_IntOrFloatType cIoF{};
+    if (!u8VecBufferReadTypeCorrect<uint32_t>(buf, bufPtr)) {
+        flagError = true;
+        return cIoF;
+    }
+
+    cIoF.bytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
+    return cIoF;
+}
+
+
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    //TODO
     if (!u8VecBufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
         return false;
     }
@@ -202,12 +218,14 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
         }
 
         case CONSTANT_Integer: {
-
+            constants.intConsts.push_back(readConstantIntOrFloatFromBuf<CONSTANT_IntegerInfo>(buf, bufPtr, m_parseError));
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Float: {
-
+            constants.floatConsts.push_back(readConstantIntOrFloatFromBuf<CONSTANT_FloatInfo>(buf, bufPtr, m_parseError));
+            if (m_parseError) { return false; }
             break;
         }
 
