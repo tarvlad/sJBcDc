@@ -34,12 +34,26 @@ createErrorString(str1 pathStr, str2 initResultStr) {
 }
 
 
+template<typename T1, typename T2>
+static inline bool
+setupErrStrAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst) {
+    strDst = createErrorString(argErrStr1, argErrStr2);
+    return true;
+}
+
+template<typename T1, typename T2, typename T3>
+static inline bool
+setupErrStrWithAdditionalInfoAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst, T3 addInfo) {
+    setupErrStrAndReturnTrue(argErrStr1, argErrStr2, strDst);
+    strDst += std::string(addInfo);
+    return true;
+}
+
 bool
 ClassFile::parseFilePath(std::string &pathStr) {
     m_path = std::filesystem::path(pathStr);
     if (!std::filesystem::exists(m_path)) {
-        m_result = createErrorString(pathStr, initResults[0]);
-        return true;
+        return setupErrStrAndReturnTrue(pathStr, initResults[0], m_result);
     }
     return false;
 }
@@ -49,36 +63,49 @@ ClassFile::parseFilePath(std::string &pathStr) {
     if (m_parseError) { return; }
 
 
-template<typename typeForRead, typename Buffer>
+template<typename Buffer>
 static inline bool
-bufferReadCorrect(Buffer &buf, size_t &bufPtr) {
-    if (buf.size() < bufPtr + sizeof(typeForRead)) {
+bufferReadNBytesCorrect(Buffer &buf, size_t &bufPtr, size_t bytesNum) {
+    if (buf.size() < bufPtr + bytesNum) {
         return false;
     }
     return true;
 }
 
+
+template<typename typeForRead, typename Buffer>
+static inline bool
+bufferReadTypeCorrect(Buffer &buf, size_t &bufPtr) {
+    return bufferReadNBytesCorrect(buf, bufPtr, sizeof(typeForRead));
+}
+
+
+static inline bool
+u8VecBufferReadNBytesCorrect(std::vector<uint8_t> &buf, size_t &bufPtr, size_t bytesNum) {
+    return bufferReadNBytesCorrect<std::vector<uint8_t>>(buf, bufPtr, bytesNum);
+}
+
+
 template<typename typeForRead>
 static inline bool
-bufferU8VecReadCorrect(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    return bufferReadCorrect<typeForRead, std::vector<uint8_t>>(buf, bufPtr);
+u8VecBufferReadTypeCorrect(std::vector<uint8_t> &buf, size_t &bufPtr) {
+    return bufferReadTypeCorrect<typeForRead, std::vector<uint8_t>>(buf, bufPtr);
 }
+
 
 
 bool
 ClassFile::setupClassFileBuf(std::vector<uint8_t> &buf) {
     std::ifstream src(m_path, std::ios::in | std::ios::binary);
     if (!src.is_open()) {
-        m_result = createErrorString(m_path, initResults[1]);
-        return true;
+        return setupErrStrAndReturnTrue(m_path, initResults[1], m_result);
     }
 
     size_t srcSz = std::filesystem::file_size(m_path);
     buf.resize(srcSz);
     if (srcSz > std::numeric_limits<long>::max()) {
-        m_result = createErrorString(m_path, initResults[2]);
         src.close();
-        return true;
+        return setupErrStrAndReturnTrue(m_path, initResults[2], m_result);
     }
     src.read((char *)&(buf[0]), (long)srcSz);
     src.close();
@@ -88,15 +115,13 @@ ClassFile::setupClassFileBuf(std::vector<uint8_t> &buf) {
 
 bool
 ClassFile::parseMagicConst(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (!bufferU8VecReadCorrect<uint16_t>(buf, bufPtr)) {
-        m_result = createErrorString(m_path, initResults[3]);
-        return true;
+    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+        return setupErrStrAndReturnTrue(m_path, initResults[3], m_result);
     }
 
     m_magic = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
     if (m_magic != 0xCAFEBABE) {
-        m_result = createErrorString(m_path, initResults[3]);
-        return true;
+        return setupErrStrAndReturnTrue(m_path, initResults[3], m_result);
     }
 
     return false;
@@ -105,9 +130,8 @@ ClassFile::parseMagicConst(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 bool
 ClassFile::parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (!bufferU8VecReadCorrect<uint16_t>(buf, bufPtr)) {
-        m_result = createErrorString(m_path, initResults[4]);
-        return true;
+    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+        return setupErrStrAndReturnTrue(m_path, initResults[4], m_result);
     }
     m_minorVersion = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
 
@@ -117,28 +141,36 @@ ClassFile::parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 bool
 ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (!bufferU8VecReadCorrect<uint16_t>(buf, bufPtr)) {
-        m_result = createErrorString(m_path, initResults[5]);
-        return true;
+    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+        return setupErrStrAndReturnTrue(m_path, initResults[5], m_result);
     }
 
     m_majorVersion = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
     if ((m_majorVersion < 45) || (m_majorVersion > 63)) {
-        m_result = createErrorString(m_path, initResults[6]);
-        return true;
+        return setupErrStrAndReturnTrue(m_path, initResults[6], m_result);
     } else if ((m_majorVersion >= 56) && (m_minorVersion != 0) && (m_minorVersion != 65535)) {
-        m_result = createErrorString(m_path, initResults[7]);
-        return true;
+        return setupErrStrAndReturnTrue(m_path, initResults[7], m_result);
     }
 
     return false;
+}
+
+//if some error, tag is set to 0x0
+template<typename Buffer>
+static CONSTANT_Utf8Info
+readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_Utf8Info cUtf8{CONSTANT_Utf8};
+    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+        flagError = true;
+        return cUtf8;
+    }
 }
 
 
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
     //TODO
-    if (!bufferU8VecReadCorrect<uint8_t>(buf, bufPtr)) {
+    if (!u8VecBufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
         return true;
     }
 
@@ -240,16 +272,14 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 bool
 ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (!bufferU8VecReadCorrect<uint16_t>(buf, bufPtr)) {
-        m_result = createErrorString(m_path, initResults[8]);
-        return true;
+    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+        return setupErrStrAndReturnTrue(m_path, initResults[8], m_result);
     }
     size_t constantPoolCount = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
 
     for (size_t i = 0; i < constantPoolCount; i++) {
         if (parseConstant(buf, bufPtr)) {
-            m_result = createErrorString(m_path, initResults[9]) + " " + std::to_string(i);
-            return true;
+            return setupErrStrWithAdditionalInfoAndReturnTrue(m_path, initResults[9], m_result, std::to_string(i));
         }
     }
 
@@ -279,8 +309,8 @@ ClassFile::init(std::string &pathStr) {
     PARSE_ERR_STATUS;
 
     //TODO
-    m_parseError = parseConstantPool(buf, bufPtr);
-    PARSE_ERR_STATUS;
+//    m_parseError = parseConstantPool(buf, bufPtr);
+//    PARSE_ERR_STATUS;
 }
 
 
