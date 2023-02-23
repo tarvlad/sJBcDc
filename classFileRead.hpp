@@ -6,6 +6,8 @@
 #include <string>
 #include <filesystem>
 
+#include "constant_pool.hpp"
+
 class ClassFile {
 private:
     uint32_t m_magic;
@@ -14,6 +16,8 @@ private:
     uint16_t m_accessFlags;
     uint16_t m_thisClass;
     uint16_t m_superClass;
+
+    ClassFileConstants constants;
 
     bool m_parseError = false;
     std::string m_result;
@@ -36,6 +40,9 @@ private:
 
     bool
     parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr);
+
+    bool
+    parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr);
 
 public:
     void

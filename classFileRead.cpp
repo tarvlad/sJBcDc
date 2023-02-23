@@ -21,7 +21,9 @@ initResults = std::to_array<std::string_view>({
     "Minor version not found",
     "Major version not found",
     "Invalid major version",
-    "Invalid minor version"
+    "Invalid minor version",
+    "Constant pool size not found",
+    "Invalid constant"
 });
 
 
@@ -46,6 +48,8 @@ ClassFile::parseFilePath(std::string &pathStr) {
 #define PARSE_ERR_STATUS \
     if (m_parseError) { return; }
 
+#define BUF_INVALID_LEN_CHECK(type, buf, bufPtr) \
+    (buf.size() < bufPtr + sizeof(type))
 
 bool
 ClassFile::setupClassFileBuf(std::vector<uint8_t> &buf) {
@@ -118,10 +122,85 @@ ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 
 bool
-ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    size_t constantPoolCount = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
     //TODO
-    return true;
+    if (buf.size() < bufPtr + sizeof(uint8_t)) {
+        return true;
+    }
+
+    switch (getValueFromClassFileBuffer<uint8_t>(buf, bufPtr)) {
+        case CONSTANT_Utf8: {
+            if (buf.size() < bufPtr + sizeof(uint16_t)) { return true; }
+
+            //Create here new object because if some error while parsing in ClassFile.constants
+            // will be only correctly parsed constants
+            CONSTANT_Utf8Info clfConst{};
+            clfConst.tag = CONSTANT_Utf8;
+            clfConst.bytes.resize(getValueFromClassFileBuffer<uint16_t>(buf, bufPtr));
+            if (buf.size() < bufPtr + clfConst.bytes.size()) { return true; }
+
+            for (auto &byte: clfConst.bytes) {
+                byte = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
+            }
+
+            //std::move because we do not need copy of vector content
+            constants.utf8Consts.push_back(std::move(clfConst));
+
+            break;
+        }
+
+        case CONSTANT_Integer: {
+            if (buf.size() < bufPtr + sizeof(uint32_t)) { return true; }
+
+            CONSTANT_IntegerInfo intConst{};
+            intConst.tag = CONSTANT_Integer;
+            if (buf.size() < bufPtr + sizeof(uint32_t)) { return true; }
+            intConst.bytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
+
+            constants.intConsts.push_back(intConst);
+
+            break;
+        }
+
+        case CONSTANT_Float: {
+            if (buf.size() < bufPtr + sizeof(uint32_t)) { return true; }
+
+            CONSTANT_FloatInfo floatConst{};
+            floatConst.tag = CONSTANT_Float;
+            if (buf.size() < bufPtr + sizeof(uint32_t)) { return true; }
+            floatConst.bytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
+
+            constants.floatConsts.push_back(floatConst);
+
+            break;
+        }
+
+        default: {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+bool
+ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
+    if (buf.size() < bufPtr + sizeof(uint16_t)) {
+        m_result = createErrorString(m_path, initResults[8]);
+        return true;
+    }
+    size_t constantPoolCount = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+
+    for (size_t i = 0; i < constantPoolCount; i++) {
+        if (parseConstant(buf, bufPtr)) {
+            m_result = createErrorString(m_path, initResults[9]) + " " + std::to_string(i);
+            return true;
+        }
+    }
+
+
+    return false;
 }
 
 
@@ -146,5 +225,8 @@ ClassFile::init(std::string &pathStr) {
     PARSE_ERR_STATUS;
 
     //TODO
+    m_parseError = parseConstantPool(buf, bufPtr);
+    PARSE_ERR_STATUS;
 }
+
 

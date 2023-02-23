@@ -3,4 +3,4 @@ project (sJBcDc)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(sJBcDc main.cpp classFileRead.cpp classFileRead.hpp)
+add_executable(sJBcDc main.cpp classFileRead.cpp classFileRead.hpp constant_pool.hpp)
