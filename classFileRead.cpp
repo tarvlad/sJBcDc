@@ -204,6 +204,35 @@ readConstantIntOrFloatFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 }
 
 
+template<typename CONSTANT_LongOrDoubleType, typename Buffer>
+static CONSTANT_LongOrDoubleType
+readConstantLongOrDoubleFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_LongOrDoubleType cLoD{};
+    if (!u8VecBufferReadTypeCorrect<uint64_t>(buf, bufPtr)) {
+        flagError = true;
+        return cLoD;
+    }
+
+    cLoD.highBytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
+    cLoD.lowBytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
+    return cLoD;
+}
+
+
+template <typename Buffer>
+static CONSTANT_ClassInfo
+readConstantClassFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_ClassInfo clI{};
+    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+        flagError = true;
+        return clI;
+    }
+
+    clI.nameIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return clI;
+}
+
+
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
     if (!u8VecBufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
@@ -230,17 +259,20 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
         }
 
         case CONSTANT_Long: {
-
+            constants.longConsts.push_back(readConstantLongOrDoubleFromBuf<CONSTANT_LongInfo>(buf, bufPtr, m_parseError));
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Double: {
-
+            constants.doubleConsts.push_back(readConstantLongOrDoubleFromBuf<CONSTANT_DoubleInfo>(buf, bufPtr, m_parseError));
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Class: {
-
+            constants.classConsts.push_back(readConstantClassFromBuf(buf, bufPtr, m_parseError));
+            if (m_parseError) { return false; }
             break;
         }
 
