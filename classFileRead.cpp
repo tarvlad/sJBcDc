@@ -213,6 +213,12 @@ ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 }
 
 
+/*
+ * Reads and verifies CONSTANT_Utf8 from buffer.
+ *
+ * Restrictions:
+ * No one CONSTANT_Utf8Info.bytes[i] cant have the 0 value and value in [0xf0..0xff]
+ */
 template<typename Buffer>
 static CONSTANT_Utf8Info
 readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
@@ -231,6 +237,10 @@ readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 
     for (auto &byte : cUtf8.bytes) {
         byte = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
+        if ((byte == 0) || ((byte >= 0xf0) && (byte <= 0xff))) {
+            flagError = true;
+            return cUtf8;
+        }
     }
 
     return cUtf8;
@@ -238,7 +248,7 @@ readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 
 
 /*
- * Reads and returns CONSTANT_Utf8 from buffer.
+ * Reads, verifies and appends to ClassFile.constants constant from buffer.
  */
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
