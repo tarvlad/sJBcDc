@@ -291,11 +291,6 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
 }
 
 
-/*
- * Reads and verifies ClassFile.constants
- *
- * If some error, returns true and ClassFile.m_result explains the error
- */
 bool
 ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
     if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
@@ -314,11 +309,6 @@ ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
 }
 
 
-/*
- * Initializes ClassFile (reads it from disk).
- * If some error happens, m_parseError set to true
- * and in m_result stored string with explanation an error
- */
 void
 ClassFile::init(std::string &pathStr) {
     parseFilePath(pathStr);
