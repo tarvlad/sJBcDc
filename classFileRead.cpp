@@ -3,10 +3,7 @@
 #include <array>
 #include <fstream>
 
-/*
- * Reads sizeof(type) bytes from buffer from position ptr and returns it,
- * ptr is incremented by the number of bytes read.
- */
+
 template <typename type> static
 type getValueFromClassFileBuffer(std::vector<uint8_t> &buffer, size_t &ptr) {
     auto ret = std::byteswap(*((type *)(&(buffer[ptr]))));
@@ -30,10 +27,6 @@ initResults = std::to_array<std::string_view>({
 });
 
 
-/*
- * Creates string with basic error explanation in format
- * "pathStr: initResultStr"
- */
 template <typename str1, typename str2>
 static inline std::string
 createErrorString(str1 pathStr, str2 initResultStr) {
@@ -41,11 +34,6 @@ createErrorString(str1 pathStr, str2 initResultStr) {
 }
 
 
-/*
- * Creates string with basic error explanation in format
- * "pathStr: initResultStr", write it to strDst
- * and returns true
- */
 template<typename T1, typename T2>
 static inline bool
 setupErrStrAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst) {
@@ -53,11 +41,7 @@ setupErrStrAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst) {
     return true;
 }
 
-/*
- * Creates string with additional error explanation in format
- * "pathStr: initResultStr strDst", write it to strDst
- * and returns true
- */
+
 template<typename T1, typename T2, typename T3>
 static inline bool
 setupErrStrWithAdditionalInfoAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst, T3 addInfo) {
@@ -67,10 +51,6 @@ setupErrStrWithAdditionalInfoAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::st
 }
 
 
-/*
- * Checks that pathStr represents correct path on disk and stores it in ClassFile.m_path
- * If some error, returns true and ClassFile.m_result represents the error
- */
 bool
 ClassFile::parseFilePath(std::string &pathStr) {
     m_path = std::filesystem::path(pathStr);
@@ -85,9 +65,6 @@ ClassFile::parseFilePath(std::string &pathStr) {
     if (m_parseError) { return; }
 
 
-/*
- * Checks that Buffer[bufPtr + bytesNum] does not go beyond the bounds of Buffer
- */
 template<typename Buffer>
 static inline bool
 bufferReadNBytesCorrect(Buffer &buf, size_t &bufPtr, size_t bytesNum) {
@@ -98,9 +75,6 @@ bufferReadNBytesCorrect(Buffer &buf, size_t &bufPtr, size_t bytesNum) {
 }
 
 
-/*
- * Checks that Buffer[bufPtr + sizeof(typeForRead)] does not go beyond the bounds of Buffer
- */
 template<typename typeForRead, typename Buffer>
 static inline bool
 bufferReadTypeCorrect(Buffer &buf, size_t &bufPtr) {
@@ -108,18 +82,12 @@ bufferReadTypeCorrect(Buffer &buf, size_t &bufPtr) {
 }
 
 
-/*
- * Checks that buf[bufPtr + bytesNum] does not go beyond the bounds of buf
- */
 static inline bool
 u8VecBufferReadNBytesCorrect(std::vector<uint8_t> &buf, size_t &bufPtr, size_t bytesNum) {
     return bufferReadNBytesCorrect<std::vector<uint8_t>>(buf, bufPtr, bytesNum);
 }
 
 
-/*
- * Checks that buf[bufPtr + sizeof(typeForRead)] does not go beyond the bounds of buf
- */
 template<typename typeForRead>
 static inline bool
 u8VecBufferReadTypeCorrect(std::vector<uint8_t> &buf, size_t &bufPtr) {
@@ -127,12 +95,6 @@ u8VecBufferReadTypeCorrect(std::vector<uint8_t> &buf, size_t &bufPtr) {
 }
 
 
-/*
- * Reads ClassFile from disk to temporary buffer which used next by other functions while
- * init ClassFile.
- *
- * returns true if some error happened
- */
 bool
 ClassFile::setupClassFileBuf(std::vector<uint8_t> &buf) {
     std::ifstream src(m_path, std::ios::in | std::ios::binary);
@@ -152,11 +114,6 @@ ClassFile::setupClassFileBuf(std::vector<uint8_t> &buf) {
 }
 
 
-/*
- * Reads and verifies ClassFile.magic constant from buffer (0xCAFEBABE expected)
- *
- * If some error, returns true
- */
 bool
 ClassFile::parseMagicConst(std::vector<uint8_t> &buf, size_t &bufPtr) {
     if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
@@ -172,12 +129,6 @@ ClassFile::parseMagicConst(std::vector<uint8_t> &buf, size_t &bufPtr) {
 }
 
 
-/*
- * Reads ClassFIle.minorVersion from buffer
- * (if major version >= 56, 0 or 65535 expected)
- *
- * If some error, returns true
- */
 bool
 ClassFile::parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
     if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
@@ -189,13 +140,6 @@ ClassFile::parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 }
 
 
-/*
- * Reads ClassFile.majorVersion from buffer. Verifies minor and major version.
- * Major version need to belong [45..63] (63 == java 19)
- * Minor version any if major < 56, else 0 or 65535
- *
- * If some error, returns true
- */
 bool
 ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
     if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
@@ -213,12 +157,7 @@ ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 }
 
 
-/*
- * Reads and verifies CONSTANT_Utf8 from buffer.
- *
- * Restrictions:
- * No one CONSTANT_Utf8Info.bytes[i] cant have the 0 value and value in [0xf0..0xff]
- */
+
 template<typename Buffer>
 static CONSTANT_Utf8Info
 readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
@@ -237,6 +176,7 @@ readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 
     for (auto &byte : cUtf8.bytes) {
         byte = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
+        //TODO: function with name, not just checks
         if ((byte == 0) || ((byte >= 0xf0) && (byte <= 0xff))) {
             flagError = true;
             return cUtf8;
@@ -247,9 +187,6 @@ readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 }
 
 
-/*
- * Reads, verifies and appends to ClassFile.constants constant from buffer.
- */
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
     //TODO
