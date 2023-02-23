@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <filesystem>
 
 class ClassFile {
 private:
@@ -14,7 +15,25 @@ private:
     uint16_t m_thisClass;
     uint16_t m_superClass;
 
+    bool m_parseError = false;
     std::string m_result;
+    std::filesystem::path m_path;
+
+    bool
+    parseFilePath(std::string& pathStr);
+
+    bool
+    setupClassFileBuf(std::vector<uint8_t> &buf);
+
+    bool
+    parseMagicConst(std::vector<uint8_t> &buf, size_t &bufPtr);
+
+    bool
+    parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr);
+
+    bool
+    parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr);
+
 public:
     void
     init(std::string &path);
