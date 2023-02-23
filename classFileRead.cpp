@@ -43,7 +43,7 @@ ClassFile::parseFilePath(std::string &pathStr) {
 }
 
 
-#define PARSE_ERR_CHECK \
+#define PARSE_ERR_STATUS \
     if (m_parseError) { return; }
 
 
@@ -56,7 +56,7 @@ ClassFile::setupClassFileBuf(std::vector<uint8_t> &buf) {
     }
 
     size_t srcSz = std::filesystem::file_size(m_path);
-    buf.reserve(srcSz);
+    buf.resize(srcSz);
     if (srcSz > std::numeric_limits<long>::max()) {
         m_result = createErrorString(m_path, initResults[2]);
         src.close();
@@ -97,7 +97,8 @@ ClassFile::parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 }
 
 
-bool ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
+bool
+ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
     if (buf.size() < bufPtr + sizeof(uint16_t)) {
         m_result = createErrorString(m_path, initResults[5]);
         return true;
@@ -109,28 +110,40 @@ bool ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
         return true;
     } else if ((m_majorVersion >= 56) && (m_minorVersion != 0) && (m_minorVersion != 65535)) {
         m_result = createErrorString(m_path, initResults[7]);
+        return true;
     }
 
     return false;
 }
 
 
+bool
+ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
+    size_t constantPoolCount = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    //TODO
+    return true;
+}
+
+
 void
 ClassFile::init(std::string &pathStr) {
     parseFilePath(pathStr);
-    PARSE_ERR_CHECK;
+    PARSE_ERR_STATUS;
 
     std::vector<uint8_t> buf;
     size_t bufPtr = 0;
 
     m_parseError = setupClassFileBuf(buf);
-    PARSE_ERR_CHECK;
+    PARSE_ERR_STATUS;
 
     m_parseError = parseMagicConst(buf, bufPtr);
-    PARSE_ERR_CHECK;
+    PARSE_ERR_STATUS;
 
     m_parseError = parseMinorVersion(buf, bufPtr);
-    PARSE_ERR_CHECK;
+    PARSE_ERR_STATUS;
+
+    m_parseError = parseMajorVersion(buf, bufPtr);
+    PARSE_ERR_STATUS;
 
     //TODO
 }

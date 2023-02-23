@@ -34,6 +34,9 @@ private:
     bool
     parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr);
 
+    bool
+    parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr);
+
 public:
     void
     init(std::string &path);
