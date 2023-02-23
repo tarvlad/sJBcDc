@@ -4,8 +4,9 @@
 #include <fstream>
 
 
-template <typename type> static
-type getValueFromClassFileBuffer(std::vector<uint8_t> &buffer, size_t &ptr) {
+template <typename type>
+static type
+getValueFromClassFileBuffer(std::vector<uint8_t> &buffer, size_t &ptr) {
     auto ret = std::byteswap(*((type *)(&(buffer[ptr]))));
     ptr += sizeof(type);
     return ret;
@@ -34,7 +35,7 @@ createErrorString(str1 pathStr, str2 initResultStr) {
 }
 
 
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 static inline bool
 setupErrStrAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst) {
     strDst = createErrorString(argErrStr1, argErrStr2);
@@ -42,7 +43,7 @@ setupErrStrAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst) {
 }
 
 
-template<typename T1, typename T2, typename T3>
+template <typename T1, typename T2, typename T3>
 static inline bool
 setupErrStrWithAdditionalInfoAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst, T3 addInfo) {
     setupErrStrAndReturnTrue(argErrStr1, argErrStr2, strDst);
@@ -65,7 +66,7 @@ ClassFile::parseFilePath(std::string &pathStr) {
     if (m_parseError) { return; }
 
 
-template<typename Buffer>
+template <typename Buffer>
 static inline bool
 bufferReadNBytesCorrect(Buffer &buf, size_t &bufPtr, size_t bytesNum) {
     if (buf.size() < bufPtr + bytesNum) {
@@ -75,23 +76,10 @@ bufferReadNBytesCorrect(Buffer &buf, size_t &bufPtr, size_t bytesNum) {
 }
 
 
-template<typename typeForRead, typename Buffer>
+template <typename typeForRead, typename Buffer>
 static inline bool
 bufferReadTypeCorrect(Buffer &buf, size_t &bufPtr) {
     return bufferReadNBytesCorrect(buf, bufPtr, sizeof(typeForRead));
-}
-
-
-static inline bool
-u8VecBufferReadNBytesCorrect(std::vector<uint8_t> &buf, size_t &bufPtr, size_t bytesNum) {
-    return bufferReadNBytesCorrect<std::vector<uint8_t>>(buf, bufPtr, bytesNum);
-}
-
-
-template<typename typeForRead>
-static inline bool
-u8VecBufferReadTypeCorrect(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    return bufferReadTypeCorrect<typeForRead, std::vector<uint8_t>>(buf, bufPtr);
 }
 
 
@@ -116,7 +104,7 @@ ClassFile::setupClassFileBuf(std::vector<uint8_t> &buf) {
 
 bool
 ClassFile::parseMagicConst(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+    if (!bufferReadTypeCorrect<uint32_t>(buf, bufPtr)) {
         return setupErrStrAndReturnTrue(m_path, initResults[3], m_result);
     }
 
@@ -131,7 +119,7 @@ ClassFile::parseMagicConst(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 bool
 ClassFile::parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+    if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         return setupErrStrAndReturnTrue(m_path, initResults[4], m_result);
     }
     m_minorVersion = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
@@ -142,7 +130,7 @@ ClassFile::parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 bool
 ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+    if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         return setupErrStrAndReturnTrue(m_path, initResults[5], m_result);
     }
 
@@ -158,29 +146,29 @@ ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 
 static inline bool
-correctUtf8Byte(uint8_t &byte) {
+isCorrectUtf8Byte(uint8_t &byte) {
     return (byte == 0) || ((byte >= 0xf0) && (byte <= 0xff));
 }
 
 
-template<typename Buffer>
+template <typename Buffer>
 static CONSTANT_Utf8Info
 readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
     CONSTANT_Utf8Info cUtf8{};
-    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+    if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         flagError = true;
         return cUtf8;
     }
 
     cUtf8.bytes.resize(getValueFromClassFileBuffer<uint16_t>(buf, bufPtr));
-    if (!u8VecBufferReadNBytesCorrect(buf, bufPtr, cUtf8.bytes.size())) {
+    if (!bufferReadNBytesCorrect(buf, bufPtr, cUtf8.bytes.size())) {
         flagError = true;
         return cUtf8;
     }
 
     for (auto &byte : cUtf8.bytes) {
         byte = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
-        if (!correctUtf8Byte(byte)) {
+        if (!isCorrectUtf8Byte(byte)) {
             flagError = true;
             return cUtf8;
         }
@@ -190,11 +178,11 @@ readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 }
 
 
-template<typename CONSTANT_IntOrFloatType, typename Buffer>
+template <typename CONSTANT_IntOrFloatType, typename Buffer>
 static CONSTANT_IntOrFloatType
 readConstantIntOrFloatFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
     CONSTANT_IntOrFloatType cIoF{};
-    if (!u8VecBufferReadTypeCorrect<uint32_t>(buf, bufPtr)) {
+    if (!bufferReadTypeCorrect<uint32_t>(buf, bufPtr)) {
         flagError = true;
         return cIoF;
     }
@@ -204,11 +192,11 @@ readConstantIntOrFloatFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 }
 
 
-template<typename CONSTANT_LongOrDoubleType, typename Buffer>
+template <typename CONSTANT_LongOrDoubleType, typename Buffer>
 static CONSTANT_LongOrDoubleType
 readConstantLongOrDoubleFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
     CONSTANT_LongOrDoubleType cLoD{};
-    if (!u8VecBufferReadTypeCorrect<uint64_t>(buf, bufPtr)) {
+    if (!bufferReadTypeCorrect<uint64_t>(buf, bufPtr)) {
         flagError = true;
         return cLoD;
     }
@@ -222,20 +210,34 @@ readConstantLongOrDoubleFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 template <typename Buffer>
 static CONSTANT_ClassInfo
 readConstantClassFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
-    CONSTANT_ClassInfo clI{};
-    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+    CONSTANT_ClassInfo cl{};
+    if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         flagError = true;
-        return clI;
+        return cl;
     }
 
-    clI.nameIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
-    return clI;
+    cl.nameIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return cl;
+}
+
+
+template <typename Buffer>
+static CONSTANT_StringInfo
+readConstantStringFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_StringInfo str{};
+    if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+        flagError = true;
+        return str;
+    }
+
+    str.stringIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return str;
 }
 
 
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (!u8VecBufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
+    if (!bufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
         return false;
     }
 
@@ -277,7 +279,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
         }
 
         case CONSTANT_String: {
-
+            constants.stringConsts.push_back(readConstantStringFromBuf(buf, bufPtr, m_parseError));
+            if (m_parseError) { return false; }
             break;
         }
 
@@ -343,7 +346,7 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 bool
 ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (!u8VecBufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+    if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         return setupErrStrAndReturnTrue(m_path, initResults[8], m_result);
     }
     size_t constantPoolCount = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
