@@ -41,6 +41,7 @@ setupErrStrAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst) {
     return true;
 }
 
+
 template<typename T1, typename T2, typename T3>
 static inline bool
 setupErrStrWithAdditionalInfoAndReturnTrue(T1 argErrStr1, T2 argErrStr2, std::string &strDst, T3 addInfo) {
@@ -164,8 +165,23 @@ readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
         flagError = true;
         return cUtf8;
     }
+
+
+    cUtf8.bytes.resize(getValueFromClassFileBuffer<uint16_t>(buf, bufPtr));
+    if (!u8VecBufferReadNBytesCorrect(buf, bufPtr, cUtf8.bytes.size())) {
+        flagError = true;
+        return cUtf8;
+    }
+
+    for (auto &byte : cUtf8.bytes) {
+        byte = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
+    }
+
+    return cUtf8;
 }
 
+#define PARSE_ERR_STATUS_BOOL \
+    if (m_parseError) { return true; }
 
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
@@ -176,7 +192,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
     switch (getValueFromClassFileBuffer<uint8_t>(buf, bufPtr)) {
         case CONSTANT_Utf8: {
-
+            constants.utf8Consts.push_back(readUtf8ConstFromBuf(buf, bufPtr, m_parseError));
+            PARSE_ERR_STATUS_BOOL;
             break;
         }
 
@@ -279,7 +296,7 @@ ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
     for (size_t i = 0; i < constantPoolCount; i++) {
         if (parseConstant(buf, bufPtr)) {
-            return setupErrStrWithAdditionalInfoAndReturnTrue(m_path, initResults[9], m_result, std::to_string(i));
+            return setupErrStrWithAdditionalInfoAndReturnTrue(m_path, initResults[9], m_result, " " + std::to_string(i));
         }
     }
 
