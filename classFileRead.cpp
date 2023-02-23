@@ -48,8 +48,22 @@ ClassFile::parseFilePath(std::string &pathStr) {
 #define PARSE_ERR_STATUS \
     if (m_parseError) { return; }
 
-#define BUF_INVALID_LEN_CHECK(type, buf, bufPtr) \
-    (buf.size() < bufPtr + sizeof(type))
+
+template<typename typeForRead, typename Buffer>
+static inline bool
+bufferReadCorrect(Buffer &buf, size_t &bufPtr) {
+    if (buf.size() < bufPtr + sizeof(typeForRead)) {
+        return false;
+    }
+    return true;
+}
+
+template<typename typeForRead>
+static inline bool
+bufferU8VecReadCorrect(std::vector<uint8_t> &buf, size_t &bufPtr) {
+    return bufferReadCorrect<typeForRead, std::vector<uint8_t>>(buf, bufPtr);
+}
+
 
 bool
 ClassFile::setupClassFileBuf(std::vector<uint8_t> &buf) {
@@ -74,7 +88,7 @@ ClassFile::setupClassFileBuf(std::vector<uint8_t> &buf) {
 
 bool
 ClassFile::parseMagicConst(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (buf.size() < bufPtr + sizeof(uint32_t)) {
+    if (!bufferU8VecReadCorrect<uint16_t>(buf, bufPtr)) {
         m_result = createErrorString(m_path, initResults[3]);
         return true;
     }
@@ -91,7 +105,7 @@ ClassFile::parseMagicConst(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 bool
 ClassFile::parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (buf.size() < bufPtr + sizeof(uint16_t)) {
+    if (!bufferU8VecReadCorrect<uint16_t>(buf, bufPtr)) {
         m_result = createErrorString(m_path, initResults[4]);
         return true;
     }
@@ -103,7 +117,7 @@ ClassFile::parseMinorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 bool
 ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (buf.size() < bufPtr + sizeof(uint16_t)) {
+    if (!bufferU8VecReadCorrect<uint16_t>(buf, bufPtr)) {
         m_result = createErrorString(m_path, initResults[5]);
         return true;
     }
@@ -124,56 +138,96 @@ ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
     //TODO
-    if (buf.size() < bufPtr + sizeof(uint8_t)) {
+    if (!bufferU8VecReadCorrect<uint8_t>(buf, bufPtr)) {
         return true;
     }
 
     switch (getValueFromClassFileBuffer<uint8_t>(buf, bufPtr)) {
         case CONSTANT_Utf8: {
-            if (buf.size() < bufPtr + sizeof(uint16_t)) { return true; }
-
-            //Create here new object because if some error while parsing in ClassFile.constants
-            // will be only correctly parsed constants
-            CONSTANT_Utf8Info clfConst{};
-            clfConst.tag = CONSTANT_Utf8;
-            clfConst.bytes.resize(getValueFromClassFileBuffer<uint16_t>(buf, bufPtr));
-            if (buf.size() < bufPtr + clfConst.bytes.size()) { return true; }
-
-            for (auto &byte: clfConst.bytes) {
-                byte = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
-            }
-
-            //std::move because we do not need copy of vector content
-            constants.utf8Consts.push_back(std::move(clfConst));
 
             break;
         }
 
         case CONSTANT_Integer: {
-            if (buf.size() < bufPtr + sizeof(uint32_t)) { return true; }
-
-            CONSTANT_IntegerInfo intConst{};
-            intConst.tag = CONSTANT_Integer;
-            if (buf.size() < bufPtr + sizeof(uint32_t)) { return true; }
-            intConst.bytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
-
-            constants.intConsts.push_back(intConst);
 
             break;
         }
 
         case CONSTANT_Float: {
-            if (buf.size() < bufPtr + sizeof(uint32_t)) { return true; }
-
-            CONSTANT_FloatInfo floatConst{};
-            floatConst.tag = CONSTANT_Float;
-            if (buf.size() < bufPtr + sizeof(uint32_t)) { return true; }
-            floatConst.bytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
-
-            constants.floatConsts.push_back(floatConst);
 
             break;
         }
+
+        case CONSTANT_Long: {
+
+            break;
+        }
+
+        case CONSTANT_Double: {
+
+            break;
+        }
+
+        case CONSTANT_Class: {
+
+            break;
+        }
+
+        case CONSTANT_String: {
+
+            break;
+        }
+
+        case CONSTANT_Fieldref: {
+
+            break;
+        }
+
+        case CONSTANT_Methodref: {
+
+            break;
+        }
+
+        case CONSTANT_InterfaceMethodref: {
+
+            break;
+        }
+
+        case CONSTANT_NameAndType: {
+
+            break;
+        }
+
+        case CONSTANT_MethodHandle: {
+
+            break;
+        }
+
+        case CONSTANT_MethodType: {
+
+            break;
+        }
+
+        case CONSTANT_Dynamic: {
+
+            break;
+        }
+
+        case CONSTANT_InvokeDynamic: {
+
+            break;
+        }
+
+        case CONSTANT_Module: {
+
+            break;
+        }
+
+        case CONSTANT_Package: {
+
+            break;
+        }
+
 
         default: {
             return true;
@@ -186,7 +240,7 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 bool
 ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
-    if (buf.size() < bufPtr + sizeof(uint16_t)) {
+    if (!bufferU8VecReadCorrect<uint16_t>(buf, bufPtr)) {
         m_result = createErrorString(m_path, initResults[8]);
         return true;
     }
