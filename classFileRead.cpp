@@ -146,7 +146,7 @@ ClassFile::parseMajorVersion(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
 
 static inline bool
-isCorrectUtf8Byte(uint8_t &byte) {
+incorrectUtf8Byte(uint8_t &byte) {
     return (byte == 0) || ((byte >= 0xf0) && (byte <= 0xff));
 }
 
@@ -168,7 +168,7 @@ readConstantUtf8FromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 
     for (auto &byte : constant.bytes) {
         byte = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
-        if (!isCorrectUtf8Byte(byte)) {
+        if (incorrectUtf8Byte(byte)) {
             flagError = true;
             return constant;
         }
