@@ -583,6 +583,16 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
 }
 
 
+//TODO: verify additional info (like CONSTANT_String.stringIndex -> CONSTANT_Utf8 and more)
+size_t
+ClassFile::verifyConstantPool() {
+    for (size_t cNum = 1; cNum < m_constants.idxTable.size() + 1; cNum++) {
+        idxRef constExpl = m_constants[cNum];
+    }
+    return 0;
+}
+
+
 bool
 ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
     if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
@@ -596,8 +606,13 @@ ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
             );
         }
     }
-    //TODO: verify additional info (like CONSTANT_String.stringIndex -> CONSTANT_Utf8 and more)
 
+    size_t verifyErrIdx = verifyConstantPool();
+    if (verifyErrIdx) {
+        return setupErrStrWithAdditionalInfoAndReturnTrue(
+                m_path, initResults[9], m_result, " " + std::to_string(verifyErrIdx)
+        );
+    }
 
     return false;
 }

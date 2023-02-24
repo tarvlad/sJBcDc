@@ -44,6 +44,8 @@ private:
     bool
     parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &constantPoolCount);
 
+    size_t
+    verifyConstantPool();
 public:
     void
     init(std::string &path);
