@@ -106,7 +106,17 @@ struct CONSTANT_PackageInfo {
 };
 
 
+struct idxRef {
+    size_t type;
+    size_t idx;
+};
+
 struct ClassFileConstants {
+    std::vector<idxRef> idxTable;
+    idxRef operator[](size_t idx) {
+        return idxTable[idx - 1];
+    }
+
     std::vector<CpInfo> constantPoolInfo;
     std::vector<CONSTANT_Utf8Info> utf8Consts;
     std::vector<CONSTANT_IntegerInfo> intConsts;

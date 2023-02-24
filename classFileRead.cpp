@@ -62,10 +62,6 @@ ClassFile::parseFilePath(std::string &pathStr) {
 }
 
 
-#define PARSE_ERR_STATUS \
-    if (m_parseError) { return; }
-
-
 template <typename Buffer>
 static inline bool
 bufferReadNBytesCorrect(Buffer &buf, size_t &bufPtr, size_t bytesNum) {
@@ -563,30 +559,32 @@ ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
     return false;
 }
 
+#define PARSE_ERR_STATUS \
+    if (m_parseError) { return; }
 
 void
 ClassFile::init(std::string &pathStr) {
     parseFilePath(pathStr);
-    PARSE_ERR_STATUS;
+    PARSE_ERR_STATUS
 
     std::vector<uint8_t> buf;
     size_t bufPtr = 0;
 
     m_parseError = setupClassFileBuf(buf);
-    PARSE_ERR_STATUS;
+    PARSE_ERR_STATUS
 
     m_parseError = parseMagicConst(buf, bufPtr);
-    PARSE_ERR_STATUS;
+    PARSE_ERR_STATUS
 
     m_parseError = parseMinorVersion(buf, bufPtr);
-    PARSE_ERR_STATUS;
+    PARSE_ERR_STATUS
 
     m_parseError = parseMajorVersion(buf, bufPtr);
-    PARSE_ERR_STATUS;
+    PARSE_ERR_STATUS
 
     //TODO
     m_parseError = parseConstantPool(buf, bufPtr);
-    PARSE_ERR_STATUS;
+    PARSE_ERR_STATUS
 
 }
 
