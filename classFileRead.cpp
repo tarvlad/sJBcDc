@@ -153,89 +153,89 @@ isCorrectUtf8Byte(uint8_t &byte) {
 
 template <typename Buffer>
 static CONSTANT_Utf8Info
-readUtf8ConstFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
-    CONSTANT_Utf8Info cUtf8{};
+readConstantUtf8FromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_Utf8Info constant{};
     if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         flagError = true;
-        return cUtf8;
+        return constant;
     }
 
-    cUtf8.bytes.resize(getValueFromClassFileBuffer<uint16_t>(buf, bufPtr));
-    if (!bufferReadNBytesCorrect(buf, bufPtr, cUtf8.bytes.size())) {
+    constant.bytes.resize(getValueFromClassFileBuffer<uint16_t>(buf, bufPtr));
+    if (!bufferReadNBytesCorrect(buf, bufPtr, constant.bytes.size())) {
         flagError = true;
-        return cUtf8;
+        return constant;
     }
 
-    for (auto &byte : cUtf8.bytes) {
+    for (auto &byte : constant.bytes) {
         byte = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
         if (!isCorrectUtf8Byte(byte)) {
             flagError = true;
-            return cUtf8;
+            return constant;
         }
     }
 
-    return cUtf8;
+    return constant;
 }
 
 
 template <typename CONSTANT_IntOrFloatType, typename Buffer>
 static CONSTANT_IntOrFloatType
 readConstantIntOrFloatFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
-    CONSTANT_IntOrFloatType cIoF{};
+    CONSTANT_IntOrFloatType constant{};
     if (!bufferReadTypeCorrect<uint32_t>(buf, bufPtr)) {
         flagError = true;
-        return cIoF;
+        return constant;
     }
 
-    cIoF.bytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
-    return cIoF;
+    constant.bytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
+    return constant;
 }
 
 
 template <typename CONSTANT_LongOrDoubleType, typename Buffer>
 static CONSTANT_LongOrDoubleType
 readConstantLongOrDoubleFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
-    CONSTANT_LongOrDoubleType cLoD{};
+    CONSTANT_LongOrDoubleType constant{};
     if (!bufferReadTypeCorrect<uint64_t>(buf, bufPtr)) {
         flagError = true;
-        return cLoD;
+        return constant;
     }
 
-    cLoD.highBytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
-    cLoD.lowBytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
-    return cLoD;
+    constant.highBytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
+    constant.lowBytes = getValueFromClassFileBuffer<uint32_t>(buf, bufPtr);
+    return constant;
 }
 
 
 template <typename Buffer>
 static CONSTANT_ClassInfo
 readConstantClassFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
-    CONSTANT_ClassInfo cl{};
+    CONSTANT_ClassInfo constant{};
     if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         flagError = true;
-        return cl;
+        return constant;
     }
 
-    cl.nameIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
-    return cl;
+    constant.nameIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return constant;
 }
 
 
 template <typename Buffer>
 static CONSTANT_StringInfo
 readConstantStringFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
-    CONSTANT_StringInfo str{};
+    CONSTANT_StringInfo constant{};
     if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         flagError = true;
-        return str;
+        return constant;
     }
 
-    str.stringIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
-    return str;
+    constant.stringIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return constant;
 }
 
 
-template < typename CONSTANT_FieldOrMethodOrInterfaceref, typename Buffer>
+template <typename CONSTANT_FieldOrMethodOrInterfaceref, typename Buffer>
 static CONSTANT_FieldOrMethodOrInterfaceref
 readConstantFieldOrMethodOrInterfaceFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
     CONSTANT_FieldOrMethodOrInterfaceref constant{};
@@ -250,6 +250,79 @@ readConstantFieldOrMethodOrInterfaceFromBuf(Buffer &buf, size_t &bufPtr, bool &f
 }
 
 
+template <typename Buffer>
+static CONSTANT_NameAndTypeInfo
+readConstantNameAndTypeFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_NameAndTypeInfo constant{};
+    if (!bufferReadTypeCorrect<uint32_t>(buf, bufPtr)) {
+        flagError = true;
+        return constant;
+    }
+
+    constant.nameIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    constant.descriptorIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return constant;
+}
+
+
+template <typename Buffer>
+static CONSTANT_MethodHandleInfo
+readConstantMethodHandleFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_MethodHandleInfo constant{};
+    if (!bufferReadNBytesCorrect(buf, bufPtr, sizeof(uint16_t) + sizeof(uint8_t))) {
+        flagError = true;
+        return constant;
+    }
+
+    constant.referenceKind = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
+    constant.referenceIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return constant;
+}
+
+
+template <typename Buffer>
+static CONSTANT_MethodTypeInfo
+readConstantMethodTypeFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_MethodTypeInfo constant{};
+    if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+        flagError = true;
+        return constant;
+    }
+
+    constant.descriptorIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return constant;
+}
+
+
+template <typename CONSTANT_DynamicOrInvokeDynamicInfo, typename Buffer>
+static CONSTANT_DynamicOrInvokeDynamicInfo
+readConstantDynamicOrInvokeDynamicFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_DynamicOrInvokeDynamicInfo constant{};
+    if (!bufferReadTypeCorrect<uint32_t>(buf, bufPtr)) {
+        flagError = true;
+        return constant;
+    }
+
+    constant.bootstrapMethodAttrIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    constant.nameAndTypeIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return constant;
+}
+
+
+template <typename CONSTANT_ModuleOrPackageInfo, typename Buffer>
+static CONSTANT_ModuleOrPackageInfo
+readConstantModuleOrPackageFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_ModuleOrPackageInfo constant{};
+    if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
+        flagError = true;
+        return constant;
+    }
+
+    constant.nameIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return constant;
+}
+
+
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
     if (!bufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
@@ -259,7 +332,7 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
     switch (getValueFromClassFileBuffer<uint8_t>(buf, bufPtr)) {
         case CONSTANT_Utf8: {
             constants.utf8Consts.push_back(
-                readUtf8ConstFromBuf(buf, bufPtr, m_parseError)
+                    readConstantUtf8FromBuf(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
             break;
@@ -338,37 +411,58 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
         }
 
         case CONSTANT_NameAndType: {
-
+            constants.nameAndTypeConsts.push_back(
+                readConstantNameAndTypeFromBuf(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_MethodHandle: {
-
+            constants.methodHandleConsts.push_back(
+                readConstantMethodHandleFromBuf(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_MethodType: {
-
+            constants.methodTypeConsts.push_back(
+                readConstantMethodTypeFromBuf(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Dynamic: {
-
+            constants.dynamicConsts.push_back(
+                readConstantDynamicOrInvokeDynamicFromBuf<CONSTANT_DynamicInfo>(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_InvokeDynamic: {
-
+            constants.invokeDynamicConsts.push_back(
+                readConstantDynamicOrInvokeDynamicFromBuf<CONSTANT_InvokeDynamicInfo>(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Module: {
-
+            constants.moduleConsts.push_back(
+                readConstantModuleOrPackageFromBuf<CONSTANT_ModuleInfo>(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Package: {
-
+            constants.packageConsts.push_back(
+                readConstantModuleOrPackageFromBuf<CONSTANT_PackageInfo>(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
