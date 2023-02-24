@@ -42,7 +42,7 @@ private:
     parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr);
 
     bool
-    parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr);
+    parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &constantPoolCount, size_t &typeReaded);
 
 public:
     void

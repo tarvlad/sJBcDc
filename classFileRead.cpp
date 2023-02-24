@@ -206,10 +206,18 @@ readConstantLongOrDoubleFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
     return constant;
 }
 
+template <typename T1, typename T2>
+static bool
+isValidIndexInConstantPoolTable(T1 &idx, T2 &constantPoolCount) {
+    if ((idx < constantPoolCount) && (idx > 0)) {
+        return true;
+    }
+    return false;
+}
 
 template <typename Buffer>
 static CONSTANT_ClassInfo
-readConstantClassFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+readConstantClassFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError, size_t &constantPoolCount) {
     CONSTANT_ClassInfo constant{};
     if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         flagError = true;
@@ -217,13 +225,18 @@ readConstantClassFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
     }
 
     constant.nameIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    if (!isValidIndexInConstantPoolTable(constant.nameIndex, constantPoolCount)) {
+        flagError = true;
+        return constant;
+    }
+
     return constant;
 }
 
 
 template <typename Buffer>
 static CONSTANT_StringInfo
-readConstantStringFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+readConstantStringFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError, size_t &constantPoolCount) {
     CONSTANT_StringInfo constant{};
     if (!bufferReadTypeCorrect<uint16_t>(buf, bufPtr)) {
         flagError = true;
@@ -231,6 +244,10 @@ readConstantStringFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
     }
 
     constant.stringIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    if (!isValidIndexInConstantPoolTable(constant.stringIndex, constantPoolCount)) {
+        flagError = true;
+        return constant;
+    }
     return constant;
 }
 
@@ -324,12 +341,13 @@ readConstantModuleOrPackageFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError)
 
 
 bool
-ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
+ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &constantPoolCount, size_t &typeReaded) {
     if (!bufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
         return false;
     }
 
-    switch (getValueFromClassFileBuffer<uint8_t>(buf, bufPtr)) {
+    typeReaded = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
+    switch (typeReaded) {
         case CONSTANT_Utf8: {
             constants.utf8Consts.push_back(
                     readConstantUtf8FromBuf(buf, bufPtr, m_parseError)
@@ -372,7 +390,7 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
         case CONSTANT_Class: {
             constants.classConsts.push_back(
-                readConstantClassFromBuf(buf, bufPtr, m_parseError)
+                readConstantClassFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
             break;
@@ -380,7 +398,7 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
         case CONSTANT_String: {
             constants.stringConsts.push_back(
-                readConstantStringFromBuf(buf, bufPtr, m_parseError)
+                readConstantStringFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
             break;
@@ -482,12 +500,14 @@ ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
         return setupErrStrAndReturnTrue(m_path, initResults[8], m_result);
     }
     size_t constantPoolCount = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
-
+    size_t typeConstantReaded;
     for (size_t i = 0; i < constantPoolCount; i++) {
-        if (!parseConstant(buf, bufPtr)) {
+        if (!parseConstant(buf, bufPtr, constantPoolCount, typeConstantReaded)) {
             return setupErrStrWithAdditionalInfoAndReturnTrue(m_path, initResults[9], m_result, " " + std::to_string(i));
         }
+        //TODO: add indexation of constants
     }
+    //TODO: verify additional info (like CONSTANT_String.stringIndex -> CONSTANT_Utf8 and more)
 
 
     return false;
