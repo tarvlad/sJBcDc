@@ -370,6 +370,18 @@ readConstantModuleOrPackageFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError,
 }
 
 
+template <typename CONST, typename BufferTo, typename BufferFrom>
+static void
+addIdxTableReference(BufferTo &bufferTo, CONST typeConstant, BufferFrom &bufferConstant) {
+    bufferTo.push_back(
+        idxRef{
+                (size_t)typeConstant,
+                bufferConstant.size() - 1
+        }
+    );
+}
+
+
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &constantPoolCount) {
     if (!bufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
@@ -382,11 +394,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                     readConstantUtf8FromBuf(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Utf8,
-                        m_constants.utf8Consts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Utf8,
+                                 m_constants.utf8Consts);
             break;
         }
 
@@ -395,11 +404,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 readConstantIntOrFloatFromBuf<CONSTANT_IntegerInfo>(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Integer,
-                        m_constants.intConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Integer,
+                                 m_constants.intConsts);
             break;
         }
 
@@ -408,11 +414,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 readConstantIntOrFloatFromBuf<CONSTANT_FloatInfo>(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Float,
-                        m_constants.floatConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Float,
+                                 m_constants.floatConsts);
             break;
         }
 
@@ -421,11 +424,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 readConstantLongOrDoubleFromBuf<CONSTANT_LongInfo>(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Long,
-                        m_constants.longConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Long,
+                                 m_constants.longConsts);
             break;
         }
 
@@ -434,11 +434,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 readConstantLongOrDoubleFromBuf<CONSTANT_DoubleInfo>(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Double,
-                        m_constants.doubleConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Double,
+                                 m_constants.doubleConsts);
             break;
         }
 
@@ -447,11 +444,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 readConstantClassFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Class,
-                        m_constants.classConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Class,
+                                 m_constants.classConsts);
             break;
         }
 
@@ -460,11 +454,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 readConstantStringFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_String,
-                        m_constants.stringConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_String,
+                                 m_constants.stringConsts);
             break;
         }
 
@@ -475,11 +466,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 )
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Fieldref,
-                        m_constants.fieldrefConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Fieldref,
+                                 m_constants.fieldrefConsts);
             break;
         }
 
@@ -490,11 +478,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 )
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Methodref,
-                        m_constants.methodrefConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Methodref,
+                                 m_constants.methodrefConsts);
             break;
         }
 
@@ -505,11 +490,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 )
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_InterfaceMethodref,
-                        m_constants.interfaceMetodrefConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_InterfaceMethodref,
+                                 m_constants.interfaceMetodrefConsts);
             break;
         }
 
@@ -518,11 +500,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 readConstantNameAndTypeFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_NameAndType,
-                        m_constants.nameAndTypeConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_NameAndType,
+                                 m_constants.nameAndTypeConsts);
             break;
         }
 
@@ -531,11 +510,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 readConstantMethodHandleFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_MethodHandle,
-                        m_constants.methodHandleConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_MethodHandle,
+                                 m_constants.methodHandleConsts);
             break;
         }
 
@@ -544,11 +520,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 readConstantMethodTypeFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_MethodType,
-                        m_constants.methodTypeConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_MethodType,
+                                 m_constants.methodTypeConsts);
             break;
         }
         //TODO: verify bootstrapMethodAttrIndex after parsing
@@ -559,11 +532,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 )
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Dynamic,
-                        m_constants.dynamicConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Dynamic,
+                                 m_constants.dynamicConsts);
             break;
         }
 
@@ -574,11 +544,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 )
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_InvokeDynamic,
-                        m_constants.invokeDynamicConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_InvokeDynamic,
+                                 m_constants.invokeDynamicConsts);
             break;
         }
 
@@ -589,11 +556,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 )
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Module,
-                        m_constants.moduleConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Module,
+                                 m_constants.moduleConsts);
             break;
         }
 
@@ -604,11 +568,8 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
                 )
             );
             if (m_parseError) { return false; }
-            m_constants.idxTable.push_back(
-                    idxRef{
-                        CONSTANT_Package,
-                        m_constants.packageConsts.size() - 1
-                    });
+            addIdxTableReference(m_constants.idxTable, CONSTANT_Package,
+                                 m_constants.packageConsts);
             break;
         }
 
