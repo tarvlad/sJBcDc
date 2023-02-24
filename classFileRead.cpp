@@ -551,7 +551,9 @@ ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
     size_t typeConstantReaded;
     for (size_t i = 0; i < constantPoolCount; i++) {
         if (!parseConstant(buf, bufPtr, constantPoolCount, typeConstantReaded)) {
-            return setupErrStrWithAdditionalInfoAndReturnTrue(m_path, initResults[9], m_result, " " + std::to_string(i));
+            return setupErrStrWithAdditionalInfoAndReturnTrue(
+                    m_path, initResults[9], m_result, " " + std::to_string(i)
+            );
         }
         //TODO: add indexation of constants
     }
@@ -582,11 +584,10 @@ ClassFile::init(std::string &pathStr) {
     m_parseError = parseMajorVersion(buf, bufPtr);
     PARSE_ERR_STATUS;
 
-    /*
     //TODO
     m_parseError = parseConstantPool(buf, bufPtr);
     PARSE_ERR_STATUS;
-    */
+
 }
 
 
