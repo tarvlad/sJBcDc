@@ -371,160 +371,244 @@ readConstantModuleOrPackageFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError,
 
 
 bool
-ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &constantPoolCount, size_t &typeReaded) {
+ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &constantPoolCount) {
     if (!bufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
         return false;
     }
 
-    typeReaded = getValueFromClassFileBuffer<uint8_t>(buf, bufPtr);
-    switch (typeReaded) {
+    switch (getValueFromClassFileBuffer<uint8_t>(buf, bufPtr)) {
         case CONSTANT_Utf8: {
-            constants.utf8Consts.push_back(
+            m_constants.utf8Consts.push_back(
                     readConstantUtf8FromBuf(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Utf8,
+                        m_constants.utf8Consts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_Integer: {
-            constants.intConsts.push_back(
+            m_constants.intConsts.push_back(
                 readConstantIntOrFloatFromBuf<CONSTANT_IntegerInfo>(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Integer,
+                        m_constants.intConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_Float: {
-            constants.floatConsts.push_back(
+            m_constants.floatConsts.push_back(
                 readConstantIntOrFloatFromBuf<CONSTANT_FloatInfo>(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Float,
+                        m_constants.floatConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_Long: {
-            constants.longConsts.push_back(
+            m_constants.longConsts.push_back(
                 readConstantLongOrDoubleFromBuf<CONSTANT_LongInfo>(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Long,
+                        m_constants.longConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_Double: {
-            constants.doubleConsts.push_back(
+            m_constants.doubleConsts.push_back(
                 readConstantLongOrDoubleFromBuf<CONSTANT_DoubleInfo>(buf, bufPtr, m_parseError)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Double,
+                        m_constants.doubleConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_Class: {
-            constants.classConsts.push_back(
+            m_constants.classConsts.push_back(
                 readConstantClassFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Class,
+                        m_constants.classConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_String: {
-            constants.stringConsts.push_back(
+            m_constants.stringConsts.push_back(
                 readConstantStringFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_String,
+                        m_constants.stringConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_Fieldref: {
-            constants.fieldrefConsts.push_back(
+            m_constants.fieldrefConsts.push_back(
                 readConstantFieldOrMethodOrInterfaceFromBuf<CONSTANT_FieldrefInfo>(
                         buf, bufPtr, m_parseError, constantPoolCount
                 )
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Fieldref,
+                        m_constants.fieldrefConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_Methodref: {
-            constants.methodrefConsts.push_back(
+            m_constants.methodrefConsts.push_back(
                 readConstantFieldOrMethodOrInterfaceFromBuf<CONSTANT_MethodrefInfo>(
                         buf, bufPtr, m_parseError, constantPoolCount
                 )
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Methodref,
+                        m_constants.methodrefConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_InterfaceMethodref: {
-            constants.interfaceMetodrefConsts.push_back(
+            m_constants.interfaceMetodrefConsts.push_back(
                 readConstantFieldOrMethodOrInterfaceFromBuf<CONSTANT_InterfaceMethodrefInfo>(
                         buf, bufPtr, m_parseError, constantPoolCount
                 )
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_InterfaceMethodref,
+                        m_constants.interfaceMetodrefConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_NameAndType: {
-            constants.nameAndTypeConsts.push_back(
+            m_constants.nameAndTypeConsts.push_back(
                 readConstantNameAndTypeFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_NameAndType,
+                        m_constants.nameAndTypeConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_MethodHandle: {
-            constants.methodHandleConsts.push_back(
+            m_constants.methodHandleConsts.push_back(
                 readConstantMethodHandleFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_MethodHandle,
+                        m_constants.methodHandleConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_MethodType: {
-            constants.methodTypeConsts.push_back(
+            m_constants.methodTypeConsts.push_back(
                 readConstantMethodTypeFromBuf(buf, bufPtr, m_parseError, constantPoolCount)
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_MethodType,
+                        m_constants.methodTypeConsts.size() - 1
+                    });
             break;
         }
         //TODO: verify bootstrapMethodAttrIndex after parsing
         case CONSTANT_Dynamic: {
-            constants.dynamicConsts.push_back(
+            m_constants.dynamicConsts.push_back(
                 readConstantDynamicOrInvokeDynamicFromBuf<CONSTANT_DynamicInfo>(
                         buf, bufPtr, m_parseError, constantPoolCount
                 )
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Dynamic,
+                        m_constants.dynamicConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_InvokeDynamic: {
-            constants.invokeDynamicConsts.push_back(
+            m_constants.invokeDynamicConsts.push_back(
                 readConstantDynamicOrInvokeDynamicFromBuf<CONSTANT_InvokeDynamicInfo>(
                         buf, bufPtr, m_parseError, constantPoolCount
                 )
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_InvokeDynamic,
+                        m_constants.invokeDynamicConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_Module: {
-            constants.moduleConsts.push_back(
+            m_constants.moduleConsts.push_back(
                 readConstantModuleOrPackageFromBuf<CONSTANT_ModuleInfo>(
                         buf, bufPtr, m_parseError, constantPoolCount
                 )
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Module,
+                        m_constants.moduleConsts.size() - 1
+                    });
             break;
         }
 
         case CONSTANT_Package: {
-            constants.packageConsts.push_back(
+            m_constants.packageConsts.push_back(
                 readConstantModuleOrPackageFromBuf<CONSTANT_PackageInfo>(
                         buf, bufPtr, m_parseError, constantPoolCount
                 )
             );
             if (m_parseError) { return false; }
+            m_constants.idxTable.push_back(
+                    idxRef{
+                        CONSTANT_Package,
+                        m_constants.packageConsts.size() - 1
+                    });
             break;
         }
 
@@ -544,14 +628,12 @@ ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
         return setupErrStrAndReturnTrue(m_path, initResults[8], m_result);
     }
     size_t constantPoolCount = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
-    size_t typeConstantReaded;
     for (size_t i = 0; i < constantPoolCount; i++) {
-        if (!parseConstant(buf, bufPtr, constantPoolCount, typeConstantReaded)) {
+        if (!parseConstant(buf, bufPtr, constantPoolCount)) {
             return setupErrStrWithAdditionalInfoAndReturnTrue(
                     m_path, initResults[9], m_result, " " + std::to_string(i)
             );
         }
-        //TODO: add indexation of constants
     }
     //TODO: verify additional info (like CONSTANT_String.stringIndex -> CONSTANT_Utf8 and more)
 

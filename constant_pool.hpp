@@ -108,7 +108,7 @@ struct CONSTANT_PackageInfo {
 
 struct idxRef {
     size_t type;
-    size_t idx;
+    size_t idxInType;
 };
 
 struct ClassFileConstants {

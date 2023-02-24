@@ -17,7 +17,7 @@ private:
     uint16_t m_thisClass;
     uint16_t m_superClass;
 
-    ClassFileConstants constants;
+    ClassFileConstants m_constants;
 
     bool m_parseError = false;
     std::string m_result;
@@ -42,7 +42,7 @@ private:
     parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr);
 
     bool
-    parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &constantPoolCount, size_t &typeReaded);
+    parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &constantPoolCount);
 
 public:
     void
