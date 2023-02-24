@@ -39,11 +39,11 @@ struct CONSTANT_FieldrefInfo {
 
 struct CONSTANT_MethodrefInfo {
     uint16_t classIndex;
-    uint16_t name_AndTypeIndex;
+    uint16_t nameAndTypeIndex;
 };
 
 struct CONSTANT_InterfaceMethodrefInfo {
-    uint16_t class_Index;
+    uint16_t classIndex;
     uint16_t nameAndTypeIndex;
 };
 

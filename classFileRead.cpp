@@ -235,6 +235,21 @@ readConstantStringFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
 }
 
 
+template < typename CONSTANT_FieldOrMethodOrInterfaceref, typename Buffer>
+static CONSTANT_FieldOrMethodOrInterfaceref
+readConstantFieldOrMethodOrInterfaceFromBuf(Buffer &buf, size_t &bufPtr, bool &flagError) {
+    CONSTANT_FieldOrMethodOrInterfaceref constant{};
+    if (!bufferReadTypeCorrect<uint32_t>(buf, bufPtr)) {
+        flagError = true;
+        return constant;
+    }
+
+    constant.classIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    constant.nameAndTypeIndex = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
+    return constant;
+}
+
+
 bool
 ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
     if (!bufferReadTypeCorrect<uint8_t>(buf, bufPtr)) {
@@ -243,59 +258,82 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr) {
 
     switch (getValueFromClassFileBuffer<uint8_t>(buf, bufPtr)) {
         case CONSTANT_Utf8: {
-            constants.utf8Consts.push_back(readUtf8ConstFromBuf(buf, bufPtr, m_parseError));
+            constants.utf8Consts.push_back(
+                readUtf8ConstFromBuf(buf, bufPtr, m_parseError)
+            );
             if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Integer: {
-            constants.intConsts.push_back(readConstantIntOrFloatFromBuf<CONSTANT_IntegerInfo>(buf, bufPtr, m_parseError));
+            constants.intConsts.push_back(
+                readConstantIntOrFloatFromBuf<CONSTANT_IntegerInfo>(buf, bufPtr, m_parseError)
+            );
             if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Float: {
-            constants.floatConsts.push_back(readConstantIntOrFloatFromBuf<CONSTANT_FloatInfo>(buf, bufPtr, m_parseError));
+            constants.floatConsts.push_back(
+                readConstantIntOrFloatFromBuf<CONSTANT_FloatInfo>(buf, bufPtr, m_parseError)
+            );
             if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Long: {
-            constants.longConsts.push_back(readConstantLongOrDoubleFromBuf<CONSTANT_LongInfo>(buf, bufPtr, m_parseError));
+            constants.longConsts.push_back(
+                readConstantLongOrDoubleFromBuf<CONSTANT_LongInfo>(buf, bufPtr, m_parseError)
+            );
             if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Double: {
-            constants.doubleConsts.push_back(readConstantLongOrDoubleFromBuf<CONSTANT_DoubleInfo>(buf, bufPtr, m_parseError));
+            constants.doubleConsts.push_back(
+                readConstantLongOrDoubleFromBuf<CONSTANT_DoubleInfo>(buf, bufPtr, m_parseError)
+            );
             if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Class: {
-            constants.classConsts.push_back(readConstantClassFromBuf(buf, bufPtr, m_parseError));
+            constants.classConsts.push_back(
+                readConstantClassFromBuf(buf, bufPtr, m_parseError)
+            );
             if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_String: {
-            constants.stringConsts.push_back(readConstantStringFromBuf(buf, bufPtr, m_parseError));
+            constants.stringConsts.push_back(
+                readConstantStringFromBuf(buf, bufPtr, m_parseError)
+            );
             if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Fieldref: {
-
+            constants.fieldrefConsts.push_back(
+                readConstantFieldOrMethodOrInterfaceFromBuf<CONSTANT_FieldrefInfo>(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_Methodref: {
-
+            constants.methodrefConsts.push_back(
+                readConstantFieldOrMethodOrInterfaceFromBuf<CONSTANT_MethodrefInfo>(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
         case CONSTANT_InterfaceMethodref: {
-
+            constants.interfaceMetodrefConsts.push_back(
+                readConstantFieldOrMethodOrInterfaceFromBuf<CONSTANT_InterfaceMethodrefInfo>(buf, bufPtr, m_parseError)
+            );
+            if (m_parseError) { return false; }
             break;
         }
 
