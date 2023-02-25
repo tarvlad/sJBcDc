@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <array>
 #include <fstream>
+#include <algorithm>
 
 
 template <typename type>
@@ -582,15 +583,31 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
     return true;
 }
 
+static inline bool
+correctBinaryNameInClassFile(CONSTANT_Utf8Info &constant) {
+    /*
+     * Now it just checks that these are ascii letters
+     */
+    for (auto byte : constant.bytes) {
+        if ((byte == '.') || (byte == ';') || (byte == '[')) {
+            return false;
+        }
+    }
+    if (std::any_of(constant.bytes.begin(), constant.bytes.end(),
+                    [](uint8_t byte){ return (byte == '.') || (byte == ';') || (byte == '['); })) {
+        return false;
+    }
+
+    return true;
+}
 
 static bool
 correctCONSTANT_ClassInfo(ClassFileConstants &constants, size_t &idxInType) {
     if (idxInType >= constants.classConsts.size()) { return false; }
     CONSTANT_ClassInfo &constant = constants.classConsts[idxInType];
-    if (constants[constant.nameIndex].type != CONSTANT_Utf8) {
-        /*
-         * TODO: add check (that Utf8 constant represents a valid binary class or interface name (JVMS 4.2.1))
-         */
+    idxRef &classUtf8ReprRef = constants[constant.nameIndex];
+    if ((classUtf8ReprRef.type != CONSTANT_Utf8) ||
+            (!correctBinaryNameInClassFile(constants.utf8Consts[classUtf8ReprRef.idxInType]))) {
         return false;
     }
 
@@ -602,7 +619,7 @@ correctCONSTANT_ClassInfo(ClassFileConstants &constants, size_t &idxInType) {
 size_t
 ClassFile::verifyConstantPool() {
     for (size_t cNum = 1; cNum < m_constants.idxTable.size() + 1; cNum++) {
-        idxRef constExpl = m_constants[cNum];
+        idxRef &constExpl = m_constants[cNum];
 
         switch(constExpl.type) {
             case CONSTANT_Class: {

@@ -113,7 +113,8 @@ struct idxRef {
 
 struct ClassFileConstants {
     std::vector<idxRef> idxTable;
-    idxRef operator[](size_t idx) {
+    //return std::ref(idxTable[idx - 1]) or idxTable[idx - 1]?
+    idxRef &operator[](size_t idx) {
         return idxTable[idx - 1];
     }
 
