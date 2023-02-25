@@ -583,11 +583,34 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
 }
 
 
+static bool
+correctCONSTANT_ClassInfo(ClassFileConstants &constants, size_t &idxInType) {
+    if (idxInType >= constants.classConsts.size()) {
+        return false;
+    }
+    CONSTANT_ClassInfo &constant = constants.classConsts[idxInType];
+    if (constants.idxTable[constant.nameIndex].type != CONSTANT_Utf8) {
+        return false;
+    }
+
+    return true;
+}
+
+
 //TODO: verify additional info (like CONSTANT_String.stringIndex -> CONSTANT_Utf8 and more)
 size_t
 ClassFile::verifyConstantPool() {
     for (size_t cNum = 1; cNum < m_constants.idxTable.size() + 1; cNum++) {
         idxRef constExpl = m_constants[cNum];
+
+        switch(constExpl.type) {
+            case CONSTANT_Class: {
+                if (!correctCONSTANT_ClassInfo(m_constants, constExpl.idxInType)) {
+                    return cNum;
+                }
+                break;
+            }
+        }
     }
     return 0;
 }
@@ -599,7 +622,7 @@ ClassFile::parseConstantPool(std::vector<uint8_t> &buf, size_t &bufPtr) {
         return setupErrStrAndReturnTrue(m_path, initResults[8], m_result);
     }
     size_t constantPoolCount = getValueFromClassFileBuffer<uint16_t>(buf, bufPtr);
-    for (size_t i = 0; i < constantPoolCount; i++) {
+    for (size_t i = 1; i < constantPoolCount; i++) {
         if (!parseConstant(buf, bufPtr, constantPoolCount)) {
             return setupErrStrWithAdditionalInfoAndReturnTrue(
                     m_path, initResults[9], m_result, " " + std::to_string(i)
