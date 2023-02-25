@@ -588,11 +588,6 @@ correctBinaryNameInClassFile(CONSTANT_Utf8Info &constant) {
     /*
      * Now it just checks that these are ascii letters
      */
-    for (auto byte : constant.bytes) {
-        if ((byte == '.') || (byte == ';') || (byte == '[')) {
-            return false;
-        }
-    }
     if (std::any_of(constant.bytes.begin(), constant.bytes.end(),
                     [](uint8_t byte){ return (byte == '.') || (byte == ';') || (byte == '['); })) {
         return false;
