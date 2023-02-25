@@ -586,7 +586,7 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
 static inline bool
 correctBinaryNameInClassFile(CONSTANT_Utf8Info &constant) {
     /*
-     * Now it just checks that these are ascii letters
+     * TODO: re-read jvms 4.2 and 4.4.1
      */
     if (std::any_of(constant.bytes.begin(), constant.bytes.end(),
                     [](uint8_t byte){ return (byte == '.') || (byte == ';') || (byte == '['); })) {
@@ -600,9 +600,48 @@ static bool
 correctCONSTANT_ClassInfo(ClassFileConstants &constants, size_t &idxInType) {
     if (idxInType >= constants.classConsts.size()) { return false; }
     CONSTANT_ClassInfo &constant = constants.classConsts[idxInType];
-    idxRef &classUtf8ReprRef = constants[constant.nameIndex];
-    if ((classUtf8ReprRef.type != CONSTANT_Utf8) ||
-            (!correctBinaryNameInClassFile(constants.utf8Consts[classUtf8ReprRef.idxInType]))) {
+    idxRef &classUtf8Ref = constants[constant.nameIndex];
+    if ((classUtf8Ref.type != CONSTANT_Utf8) ||
+        (!correctBinaryNameInClassFile(constants.utf8Consts[classUtf8Ref.idxInType]))) {
+        return false;
+    }
+
+    return true;
+}
+
+
+static inline bool
+hasFieldOrMethodAsMember(ClassFileConstants &constants, CONSTANT_ClassInfo &classConst) {
+    /* TODO
+     * one day, in a galaxy far, far away, we will verify this
+     */
+    return true;
+}
+
+static inline bool
+isFieldDescriptor(ClassFileConstants &constants, CONSTANT_NameAndTypeInfo &nameAndType) {
+    /*
+     * TODO:
+     * once day, in a galaxy far, far away, we will verify this
+     */
+    return true;
+}
+
+
+static bool
+correctCONSTANT_Fieldref(ClassFileConstants &constants, size_t &idxInType) {
+    if (idxInType >= constants.fieldrefConsts.size()) { return false; }
+    CONSTANT_FieldrefInfo &constant = constants.fieldrefConsts[idxInType];
+
+    idxRef &fieldrefClassInfoRef = constants[constant.classIndex];
+    if ((fieldrefClassInfoRef.type != CONSTANT_Class) ||
+        (!hasFieldOrMethodAsMember(constants,constants.classConsts[fieldrefClassInfoRef.idxInType]))) {
+        return false;
+    }
+
+    idxRef &fieldrefNameAndTypeReprRef = constants[constant.nameAndTypeIndex];
+    if ((fieldrefNameAndTypeReprRef.type != CONSTANT_NameAndType) ||
+        (!isFieldDescriptor(constants, constants.nameAndTypeConsts[fieldrefClassInfoRef.idxInType]))) {
         return false;
     }
 
@@ -624,6 +663,12 @@ ClassFile::verifyConstantPool() {
                 break;
             }
             case CONSTANT_Fieldref: {
+                if (!correctCONSTANT_Fieldref(m_constants, constExpl.idxInType)) {
+                    return cNum;
+                }
+                break;
+            }
+            case CONSTANT_Methodref: {
 
             }
         }
