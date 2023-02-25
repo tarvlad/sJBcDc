@@ -585,11 +585,12 @@ ClassFile::parseConstant(std::vector<uint8_t> &buf, size_t &bufPtr, size_t &cons
 
 static bool
 correctCONSTANT_ClassInfo(ClassFileConstants &constants, size_t &idxInType) {
-    if (idxInType >= constants.classConsts.size()) {
-        return false;
-    }
+    if (idxInType >= constants.classConsts.size()) { return false; }
     CONSTANT_ClassInfo &constant = constants.classConsts[idxInType];
-    if (constants.idxTable[constant.nameIndex].type != CONSTANT_Utf8) {
+    if (constants[constant.nameIndex].type != CONSTANT_Utf8) {
+        /*
+         * TODO: add check (that Utf8 constant represents a valid binary class or interface name (JVMS 4.2.1))
+         */
         return false;
     }
 
@@ -609,6 +610,9 @@ ClassFile::verifyConstantPool() {
                     return cNum;
                 }
                 break;
+            }
+            case CONSTANT_Fieldref: {
+
             }
         }
     }
